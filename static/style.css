@@ -1,0 +1,280 @@
+/* ============================================================
+   Habit Tracker – Light Theme
+   All visual styling lives here. Import via modules/ui.py
+   ============================================================ */
+
+/* ── Google Fonts ─────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* ── Design Tokens ────────────────────────────────────────── */
+:root {
+  --bg-page:       #f5f7fa;
+  --bg-card:       #ffffff;
+  --bg-input:      #ffffff;
+  --bg-hover:      #f0f4ff;
+  --bg-done:       #f0faf4;
+
+  --border:        #e2e8f0;
+  --border-focus:  #4f6ef7;
+  --border-done:   #86efac;
+
+  --text-primary:  #1a202c;
+  --text-secondary:#4a5568;
+  --text-muted:    #a0aec0;
+  --text-done:     #16a34a;
+
+  --accent:        #4f6ef7;
+  --accent-light:  #eef2ff;
+  --accent-dark:   #3451d1;
+
+  --success:       #22c55e;
+  --success-light: #dcfce7;
+  --warning:       #f59e0b;
+  --warning-light: #fef3c7;
+  --danger:        #ef4444;
+  --danger-light:  #fee2e2;
+
+  --streak-color:  #f97316;
+  --streak-bg:     #fff7ed;
+
+  --radius-sm:     6px;
+  --radius-md:     10px;
+  --radius-lg:     14px;
+  --radius-full:   9999px;
+
+  --shadow-sm:     0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md:     0 4px 12px rgba(0,0,0,0.08);
+  --shadow-focus:  0 0 0 3px rgba(79,110,247,0.15);
+}
+
+/* ── Base & Reset ─────────────────────────────────────────── */
+html, body, [class*="css"] {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--text-primary);
+}
+
+.stApp {
+  background-color: var(--bg-page);
+}
+
+/* ── Sidebar ──────────────────────────────────────────────── */
+section[data-testid="stSidebar"] {
+  background-color: var(--bg-card);
+  border-right: 1px solid var(--border);
+}
+
+section[data-testid="stSidebar"] .stMarkdown p {
+  color: var(--text-secondary);
+}
+
+/* ── Typography ───────────────────────────────────────────── */
+h1 { font-size: 1.75rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.03em; }
+h2 { font-size: 1.25rem; font-weight: 600; color: var(--text-primary); letter-spacing: -0.02em; }
+h3 { font-size: 1rem;    font-weight: 600; color: var(--text-secondary); }
+
+/* ── Stat Cards ───────────────────────────────────────────── */
+.stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px 16px;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.2s;
+}
+.stat-card:hover { box-shadow: var(--shadow-md); }
+
+.stat-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 2rem;
+  font-weight: 500;
+  color: var(--accent);
+  line-height: 1.1;
+  margin-bottom: 4px;
+}
+.stat-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* ── Habit Row ────────────────────────────────────────────── */
+.habit-row {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px 18px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.15s, background 0.15s;
+}
+.habit-row:hover { border-color: var(--accent); }
+.habit-row.done  { background: var(--bg-done); border-color: var(--border-done); }
+
+.habit-name {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+.habit-name.done {
+  color: var(--text-done);
+  text-decoration: line-through;
+  text-decoration-color: #86efac;
+}
+
+/* ── Badges ───────────────────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 2px 9px;
+  border-radius: var(--radius-full);
+}
+.badge-streak  { background: var(--streak-bg);   color: var(--streak-color); }
+.badge-done    { background: var(--success-light); color: var(--text-done); }
+.badge-rate    { background: var(--accent-light);  color: var(--accent-dark); }
+
+/* ── Section Eyebrow ──────────────────────────────────────── */
+.eyebrow {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+
+/* ── Heatmap ──────────────────────────────────────────────── */
+.heatmap-wrap {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
+  margin-bottom: 10px;
+  box-shadow: var(--shadow-sm);
+}
+.hm-cell {
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  border-radius: 3px;
+  margin: 1.5px;
+  transition: transform 0.1s;
+}
+.hm-cell:hover { transform: scale(1.3); }
+.hm-empty   { background: #edf2f7; }
+.hm-done    { background: #22c55e; }
+.hm-partial { background: #86efac; }
+
+.heatmap-meta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  display: flex;
+  gap: 14px;
+  margin-top: 6px;
+}
+.heatmap-meta span { color: var(--text-secondary); font-weight: 500; }
+
+/* ── Progress Bar ─────────────────────────────────────────── */
+.stProgress > div > div > div > div {
+  background: linear-gradient(90deg, var(--accent), #818cf8);
+  border-radius: var(--radius-full);
+}
+
+/* ── Buttons ──────────────────────────────────────────────── */
+.stButton > button {
+  background: var(--accent);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 0.875rem;
+  padding: 0.45rem 1rem;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+.stButton > button:hover {
+  background: var(--accent-dark);
+  box-shadow: var(--shadow-md);
+}
+.stButton > button:focus {
+  box-shadow: var(--shadow-focus);
+  outline: none;
+}
+
+/* Delete / danger button */
+.btn-danger > button {
+  background: var(--danger-light) !important;
+  color: var(--danger) !important;
+  border: 1px solid #fca5a5 !important;
+}
+.btn-danger > button:hover {
+  background: #fecaca !important;
+}
+
+/* ── Form Inputs ──────────────────────────────────────────── */
+.stTextInput > div > div > input,
+.stSelectbox > div > div > div {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+}
+.stTextInput > div > div > input:focus {
+  border-color: var(--border-focus);
+  box-shadow: var(--shadow-focus);
+  outline: none;
+}
+
+/* ── Checkbox ─────────────────────────────────────────────── */
+.stCheckbox label {
+  color: var(--text-primary) !important;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9rem;
+}
+
+/* ── Divider ──────────────────────────────────────────────── */
+hr { border-color: var(--border); margin: 1.25rem 0; }
+
+/* ── Date input ───────────────────────────────────────────── */
+.stDateInput > div > div > input {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+}
+
+/* ── Alerts / info boxes ──────────────────────────────────── */
+.stInfo    { background: var(--accent-light); border-left-color: var(--accent); }
+.stSuccess { background: var(--success-light); }
+.stWarning { background: var(--warning-light); }
+
+/* ── Tooltip card ─────────────────────────────────────────── */
+.tooltip-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  box-shadow: var(--shadow-md);
+}
+
+/* ── Footer ───────────────────────────────────────────────── */
+.footer {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  padding: 1.5rem 0 0.5rem;
+  border-top: 1px solid var(--border);
+  margin-top: 2rem;
+}
