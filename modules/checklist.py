@@ -53,13 +53,14 @@ def render(
             )
 
         with col_badges:
-            badges = ""
+            parts = []
             if is_done:
-                badges += ui.done_badge() + " "
+                parts.append(ui.done_badge())
             if streak > 0:
-                badges += ui.streak_badge(streak)
+                parts.append(ui.streak_badge(streak))
+            badge_html = "&nbsp;".join(parts) if parts else ""
             st.markdown(
-                f'<div style="padding-top:5px;text-align:right;">{badges}</div>',
+                f'<div style="padding-top:5px;text-align:right;min-height:28px;">{badge_html}</div>',
                 unsafe_allow_html=True,
             )
 
