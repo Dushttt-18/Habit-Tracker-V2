@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import json
+import time
 import streamlit as st
 import gspread
 from google.oauth2.service_account import Credentials
@@ -26,41 +27,57 @@ SCOPES = [
 ]
 
 
-# ── Connection (cached for the session) ───────────────────────
+# ── Retry helper ──────────────────────────────────────────────
+def _retry(fn, retries: int = 3, delay: float = 2.0):
+    """Call fn(), retrying on APIError up to `retries` times."""
+    for attempt in range(retries):
+        try:
+            return fn()
+        except gspread.exceptions.APIError as e:
+            if attempt == retries - 1:
+                raise
+            time.sleep(delay * (attempt + 1))
+
+
+# ── Connection ────────────────────────────────────────────────
+# Use cache_resource only for the credentials object (heavy).
+# Re-open the spreadsheet each time so we always get a fresh
+# handle — avoids stale worksheet references after add/delete.
+
 @st.cache_resource
-def get_client() -> gspread.Client:
-    """Authenticate once per Streamlit session."""
+def _get_creds() -> Credentials:
     creds_dict = st.secrets["gcp_service_account"]
-    creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
-    return gspread.authorize(creds)
+    return Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
 
 
-@st.cache_resource
-def get_spreadsheet() -> gspread.Spreadsheet:
-    client = get_client()
-    return client.open(st.secrets["SPREADSHEET_NAME"])
+def _get_client() -> gspread.Client:
+    return gspread.authorize(_get_creds())
+
+
+def _get_spreadsheet() -> gspread.Spreadsheet:
+    return _get_client().open(st.secrets["SPREADSHEET_NAME"])
 
 
 def _get_or_create_sheet(name: str, headers: list[str]) -> gspread.Worksheet:
     """Return a worksheet, creating it with headers if absent."""
-    ss = get_spreadsheet()
+    ss = _get_spreadsheet()
     try:
-        ws = ss.worksheet(name)
+        return ss.worksheet(name)
     except gspread.WorksheetNotFound:
         ws = ss.add_worksheet(title=name, rows=1000, cols=len(headers))
         ws.append_row(headers)
-    return ws
+        return ws
 
 
 # ── Habits CRUD ───────────────────────────────────────────────
 
+@st.cache_data(ttl=60)
 def load_habits() -> list[dict]:
     """Return list of habit dicts: {id, name, emoji, created}."""
     ws = _get_or_create_sheet(SHEET_NAME_HABITS, ["id", "name", "emoji", "created"])
-    rows = ws.get_all_records()
+    rows = _retry(ws.get_all_records)
 
     if not rows:
-        # Seed defaults on first run
         seed = [
             {
                 "id": i,
@@ -71,7 +88,7 @@ def load_habits() -> list[dict]:
             for i, h in enumerate(DEFAULT_HABITS)
         ]
         for h in seed:
-            ws.append_row([h["id"], h["name"], h["emoji"], h["created"]])
+            _retry(lambda h=h: ws.append_row([h["id"], h["name"], h["emoji"], h["created"]]))
         return seed
 
     return [
@@ -83,19 +100,18 @@ def load_habits() -> list[dict]:
 def add_habit(name: str, emoji: str) -> None:
     """Append a new habit row."""
     ws = _get_or_create_sheet(SHEET_NAME_HABITS, ["id", "name", "emoji", "created"])
-    rows = ws.get_all_records()
+    rows = _retry(ws.get_all_records)
     new_id = max((int(r["id"]) for r in rows), default=-1) + 1
-    ws.append_row([new_id, name.strip(), emoji, str(date.today())])
+    _retry(lambda: ws.append_row([new_id, name.strip(), emoji, str(date.today())]))
     st.cache_data.clear()
 
 
 def delete_habit(habit_id: int) -> None:
     """Delete a habit row by id."""
     ws = _get_or_create_sheet(SHEET_NAME_HABITS, ["id", "name", "emoji", "created"])
-    cell = ws.find(str(habit_id), in_column=1)
+    cell = _retry(lambda: ws.find(str(habit_id), in_column=1))
     if cell:
-        ws.delete_rows(cell.row)
-    # Also remove completions for this habit
+        _retry(lambda: ws.delete_rows(cell.row))
     _remove_habit_completions(habit_id)
     st.cache_data.clear()
 
@@ -106,7 +122,7 @@ def delete_habit(habit_id: int) -> None:
 def load_completions() -> dict[str, list[int]]:
     """Return {date_str: [habit_id, ...]} dict."""
     ws = _get_or_create_sheet(SHEET_NAME_COMPLETIONS, ["date", "habit_ids"])
-    rows = ws.get_all_records()
+    rows = _retry(ws.get_all_records)
     result: dict[str, list[int]] = {}
     for r in rows:
         try:
@@ -120,24 +136,24 @@ def load_completions() -> dict[str, list[int]]:
 def save_completions_for_date(date_str: str, habit_ids: list[int]) -> None:
     """Upsert the completions row for a given date."""
     ws = _get_or_create_sheet(SHEET_NAME_COMPLETIONS, ["date", "habit_ids"])
-    cell = ws.find(date_str, in_column=1)
+    cell = _retry(lambda: ws.find(date_str, in_column=1))
     ids_json = json.dumps(sorted(habit_ids))
     if cell:
-        ws.update_cell(cell.row, 2, ids_json)
+        _retry(lambda: ws.update_cell(cell.row, 2, ids_json))
     else:
-        ws.append_row([date_str, ids_json])
+        _retry(lambda: ws.append_row([date_str, ids_json]))
     st.cache_data.clear()
 
 
 def _remove_habit_completions(habit_id: int) -> None:
     """Strip a deleted habit_id from all completion rows."""
     ws = _get_or_create_sheet(SHEET_NAME_COMPLETIONS, ["date", "habit_ids"])
-    rows = ws.get_all_records()
+    rows = _retry(ws.get_all_records)
     for i, r in enumerate(rows, start=2):
         try:
             ids = json.loads(r["habit_ids"]) if r["habit_ids"] else []
             if habit_id in ids:
                 ids.remove(habit_id)
-                ws.update_cell(i, 2, json.dumps(ids))
+                _retry(lambda: ws.update_cell(i, 2, json.dumps(ids)))
         except (json.JSONDecodeError, KeyError):
             pass
