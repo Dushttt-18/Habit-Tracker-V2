@@ -1,0 +1,17 @@
+# Secrets — never commit
+.streamlit/secrets.toml
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.env
+venv/
+.venv/
+
+# Local data (v1 fallback)
+habits_data.json
+
+# OS
+.DS_Store
+Thumbs.db
