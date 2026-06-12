@@ -74,8 +74,8 @@ def render_heatmap(
               {habit["emoji"]} {habit["name"]}
             </span>
             <div style="display:flex;gap:6px;">
-              {streak_badge(cur_streak)}
-              {rate_badge(rate_pct)}
+              {streak_badge(cur_streak) if cur_streak > 0 else ""}
+              {rate_badge(rate_pct) if rate_pct > 0 else ""}
             </div>
           </div>
           <div>{cells}</div>
